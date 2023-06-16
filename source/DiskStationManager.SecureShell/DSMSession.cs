@@ -111,35 +111,95 @@ namespace DiskStationManager.SecureShell
         }
         private void client_HostKeyReceived(object sender, HostKeyEventArgs e)
         {
-            bool nslookup;
-            DialogResult trust = DialogResult.Yes; e.CanTrust = false; //we clicked yes if the fingerprint matches
+            DialogResult trust = DialogResult.Yes;
+            e.CanTrust = false; //we clicked yes if the fingerprint matches
+
             var host = _host;
             if (host.FingerPrint.Length.Equals(0) || !host.FingerPrint.SequenceEqual(e.FingerPrint))
             {
+                string details = $"{_ci.Host}[{GetHostAddress(host.Host, out _)}]?\tKey fingerprint: {KeyFingerPrint(e)}\tServer version: {_ci.ServerVersion}"
+                                .Replace("\t", $"{Environment.NewLine}{Environment.NewLine}");
 
                 if (host.FingerPrint.Length.Equals(0))
                 {
-                    trust = MessageBox.Show(
-                        string.Format("Do you trust the new connection with host {0}[{1}]\r\n\r\nKey fingerprint: {2}\r\n\r\nServer version: {3}",
-                        _ci.Host, GetHostAddress(host.Host, out nslookup), KeyFingerPrint(e), _ci.ServerVersion)
-                        , "New host key for " + host.Host, MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+                    trust = InputBoxYesNoExclamation("Do you trust the new connection with host " + details,
+                                                    $"New host key for {host.Host}.");
                 }
                 else
                 {
-                    trust = MessageBox.Show(
-                        string.Format("Do you trust the changed connection with host {0}[{1}]\r\n\r\nKey fingerprint: {2}\r\n\r\nServer version: {3}",
-                        _ci.Host, GetHostAddress(host.Host, out nslookup), KeyFingerPrint(e), _ci.ServerVersion)
-                        , "The host key has changed for " + host.Host, MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
-
+                    trust = InputBoxYesNoExclamation("Do you trust the changed connection with host " + details,
+                                                    $"The host key has changed for {host.Host}.");
                 }
+
                 if (trust == DialogResult.Yes)
                 {
                     host.FingerPrint = e.FingerPrint;
-
                     OnHostKeyChange(this, new EventArgs());
                 }
             }
             e.CanTrust = trust.Equals(DialogResult.Yes);
+        }
+        private DialogResult InputBoxYesNoExclamation(string text, string caption)
+        {
+            if (ConsoleUI)
+            {
+                string memo = Console.Title;
+                try
+                {
+                    Console.Title = caption;
+                    Console.WriteLine(caption);
+                    Console.WriteLine(text);
+                    Console.WriteLine();
+                    Console.WriteLine("Please respond with yes or no (NO/yes):");
+                    if (Console.ReadLine().ToLowerInvariant() == "yes") return DialogResult.Yes;
+
+                }
+                catch
+                {
+
+                }
+                finally
+                {
+                    Console.Title = memo;
+                }
+                return DialogResult.No;
+            }
+            else
+                return MessageBox.Show(text, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
+        }
+        private string GetPassPhrase(string fileName)
+        {
+            string result;
+            using (PassPhrase dialog = new PassPhrase(fileName))
+            {
+                dialog.ShowDialog();
+                result = dialog.Password;
+            }
+            return result;
+        }
+        private string GetInteractiveMethod(DSMKeyboardInteractiveEventArgs e)
+        {
+            var banner = new List<string>();
+            banner.AddRange(e.Banner.Split('\n'));
+            banner.AddRange(e.Instruction.Split('\n'));
+
+            string result;
+            using (PassPhrase dialog = new PassPhrase(e.Username, banner.ToArray(), e.Id + ": " + e.Request))
+            {
+                dialog.ShowDialog();
+                result = dialog.Password;
+            }
+            return result;
+        }
+        private string GetInteractiveMethod()
+        {
+            string result;
+            using (PassPhrase dialog = new PassPhrase("you", new string[0], "ww"))
+            {
+                dialog.ShowDialog();
+                result = dialog.Password;
+            }
+            return result;
         }
         [Obsolete("This method is only present to support DSM versions below 6.x")]
         public void ClientExecuteAsRoot(Action<SshClient> action)
@@ -169,7 +229,6 @@ namespace DiskStationManager.SecureShell
                 sc.HostKeyReceived -= client_HostKeyReceived;
             }
         }
-
         public string Version
         {
             get
@@ -196,8 +255,6 @@ namespace DiskStationManager.SecureShell
         public ConnectionInfo ConnectionInfo => _ci;
 
         public DSMHost Host => _host;
-
-
 
         public IProxySettings Proxy => _proxySettings;
 
@@ -261,42 +318,7 @@ namespace DiskStationManager.SecureShell
         }
         #endregion
 
-        private string GetPassPhrase(string fileName)
-        {
-            string result;
-            using (PassPhrase dialog = new PassPhrase(fileName))
-            {
-                dialog.ShowDialog();
-                result = dialog.Password;
-            }
-            return result;
-        }
-        private string GetInteractiveMethod(DSMKeyboardInteractiveEventArgs e)
-        {
-            var banner = new List<string>();
-            banner.AddRange(e.Banner.Split('\n'));
-            banner.AddRange(e.Instruction.Split('\n'));
 
-            string result;
-            using (PassPhrase dialog = new PassPhrase(e.Username, banner.ToArray(), e.Id + ": " + e.Request))
-            {
-                dialog.ShowDialog();
-                result = dialog.Password;
-            }
-            return result;
-        }
-        private string GetInteractiveMethod()
-        {
-
-
-            string result;
-            using (PassPhrase dialog = new PassPhrase("you", new string[0], "ww"))
-            {
-                dialog.ShowDialog();
-                result = dialog.Password;
-            }
-            return result;
-        }
         public void UploadFile(string destinationPath, string sourcePath)
         {
             UploadFile(destinationPath, new FileInfo(sourcePath));
@@ -358,7 +380,7 @@ namespace DiskStationManager.SecureShell
             {
                 DownloadFile(client, source, localfile);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 success = false;
             }
