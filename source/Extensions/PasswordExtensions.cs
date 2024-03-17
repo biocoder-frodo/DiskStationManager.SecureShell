@@ -74,7 +74,7 @@ namespace System.Security.Cryptography
             }
         }
 
-        public static SecureString ToSecureString(string input)
+        internal static SecureString ToSecureString(string input)
         {
             SecureString result = new SecureString();
             foreach (char c in input)
@@ -99,6 +99,46 @@ namespace System.Security.Cryptography
             }
             return result;
         }
+
+        public static string StringFromConsole()
+        {
+            var sb = SensitiveInfoFromConsole(() => new StringBuilder(), s => s.Length, (s, k) => s.Append(k), s => s.Remove(s.Length - 1, 1));
+            return sb.ToString();
+        }
+        public static SecureString SecureStringFromConsole()
+        {
+            var pass = SensitiveInfoFromConsole(() => new SecureString(), s => s.Length, (s, k) => s.AppendChar(k), s => s.RemoveAt(s.Length - 1));
+            pass.MakeReadOnly();
+            return pass;
+        }
+
+        private static P SensitiveInfoFromConsole<P>(Func<P> ctor, Func<P, int> length, Action<P, char> keyAction, Action<P> backspaceAction, char passwordChar = '*') where P : class
+        {
+            var info = ctor();
+            ConsoleKey key;
+            do
+            {
+                var keyInfo = Console.ReadKey(intercept: true);
+                key = keyInfo.Key;
+
+                if (key == ConsoleKey.Backspace && length(info) > 0)
+                {
+                    Console.Write("\b \b");
+
+                    backspaceAction(info);
+                }
+                else if (!char.IsControl(keyInfo.KeyChar))
+                {
+                    Console.Write(passwordChar);
+                    keyAction(info, keyInfo.KeyChar);
+                }
+            } while (key != ConsoleKey.Enter);
+            Console.WriteLine();
+            return info;
+        }
+
+
+
     }
 
 }

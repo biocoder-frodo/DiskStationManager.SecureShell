@@ -284,41 +284,6 @@ namespace DiskStationManager.SecureShell
                 p.Response = GetInteractiveMethod(new DSMKeyboardInteractiveEventArgs(_banner, e, p));
             }
         }
-        #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
-
-        void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    _ci.AuthenticationBanner -= AuthorizationBannerAction;
-
-                    foreach (var am in _ci.AuthenticationMethods)
-                    {
-                        KeyboardInteractiveAuthenticationMethod kb = am as KeyboardInteractiveAuthenticationMethod;
-                        if (kb != null)
-                        {
-                            kb.AuthenticationPrompt -= AuthenticationPromptAction;
-                        }
-                    }
-
-                    HostKeyChange -= _hostKeyChange;
-                }
-
-                disposedValue = true;
-            }
-        }
-
-
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-        #endregion
-
-
         public void UploadFile(string destinationPath, string sourcePath)
         {
             UploadFile(destinationPath, new FileInfo(sourcePath));
@@ -429,5 +394,36 @@ namespace DiskStationManager.SecureShell
         {
             stream = DownloadStream(client, source);
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+        void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _ci.AuthenticationBanner -= AuthorizationBannerAction;
+
+                    foreach (var am in _ci.AuthenticationMethods)
+                    {
+                        KeyboardInteractiveAuthenticationMethod kb = am as KeyboardInteractiveAuthenticationMethod;
+                        if (kb != null)
+                        {
+                            kb.AuthenticationPrompt -= AuthenticationPromptAction;
+                        }
+                    }
+
+                    HostKeyChange -= _hostKeyChange;
+                }
+
+                disposedValue = true;
+            }
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+        #endregion
     }
 }
