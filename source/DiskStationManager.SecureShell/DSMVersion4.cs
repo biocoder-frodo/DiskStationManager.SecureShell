@@ -8,7 +8,7 @@ namespace DiskStationManager.SecureShell
             : base(properties)
         {
         }
-        public override string Version { get { return string.Format("DSM {0}.{1}-{2}", MajorVersion, MinorVersion, BuildNumber) + (PatchVersion > 0 ? string.Format(" Update {0}", PatchVersion) : ""); } }
+        public override string Version { get { return $"DSM {MajorVersion}.{MinorVersion}-{BuildNumber}" + (PatchVersion > 0 ? $" Update {PatchVersion}" : ""); } }
 
     }
 }

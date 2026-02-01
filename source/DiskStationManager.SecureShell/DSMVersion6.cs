@@ -10,6 +10,6 @@ namespace DiskStationManager.SecureShell
         }
 
         public string ProductVersion { get { return _props["productversion"]; } }
-        public override string Version { get { return string.Format("DSM {0}-{1}", ProductVersion, BuildNumber) + (PatchVersion > 0 ? string.Format(" Update {0}", PatchVersion) : ""); } }
+        public override string Version { get { return $"DSM {ProductVersion}-{BuildNumber}" + (PatchVersion > 0 ? $" Update {PatchVersion}" : ""); } }
     }
 }

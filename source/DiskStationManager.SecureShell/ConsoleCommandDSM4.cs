@@ -44,8 +44,7 @@ namespace DiskStationManager.SecureShell
                     {
                         //string file = folder + "/" + result2[row].Substring(chop);
                         string ft = result2[row].Substring(chop - 25 + 4, 24 - 4);
-                        DateTime ts = default(DateTime);
-                        DateTime.TryParseExact(ft, "MMM d HH:mm:ss yyyy", new CultureInfo("en-US"), (DateTimeStyles)((int)DateTimeStyles.AssumeLocal + DateTimeStyles.AllowInnerWhite), out ts);
+                        DateTime.TryParseExact(ft, "MMM d HH:mm:ss yyyy", new CultureInfo("en-US"), (DateTimeStyles)((int)DateTimeStyles.AssumeLocal + DateTimeStyles.AllowInnerWhite), out DateTime ts);
 
                         result.Add(new ConsoleFileInfo(folder, result2[row].Substring(chop), ts.ToUniversalTime()));
                     }

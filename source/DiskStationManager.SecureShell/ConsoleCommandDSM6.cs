@@ -56,8 +56,7 @@ namespace DiskStationManager.SecureShell
                         string file = parse.Substring(35).TrimStart();
 
 
-                        DateTime ts;
-                        DateTime.TryParse(ft, out ts);
+                        DateTime.TryParse(ft, out DateTime ts);
 
 
                         result.Add(new ConsoleFileInfo(folder, file, ts.ToUniversalTime()));
