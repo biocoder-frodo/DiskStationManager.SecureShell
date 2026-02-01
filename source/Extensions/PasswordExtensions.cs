@@ -1,13 +1,6 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Reflection;
-using System.Security;
-using System.Security.Cryptography;
+﻿using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using static System.Security.Cryptography.DpApiString;
 
 namespace System.Security.Cryptography
@@ -19,7 +12,7 @@ namespace System.Security.Cryptography
         private readonly T _instance;
         private static byte[] vector = null;
         private static readonly object vectorlock = new object();
-        private static DataProtectionScope scope = DataProtectionScope.CurrentUser;
+        private static DataProtectionScope _scope = DataProtectionScope.CurrentUser;
         public WrappedPassword(string propname, T instance)
         {
             lock (vectorlock)
@@ -37,17 +30,18 @@ namespace System.Security.Cryptography
         {
             get
             {
-                return ToInsecureString(DecryptString((string)_property.GetValue(_instance), scope, vector));
+                return ToInsecureString(DecryptString((string)_property.GetValue(_instance), _scope, vector));
             }
             set
             {
-                _property.SetValue(_instance, EncryptString(ToSecureString(value), scope, vector));
+                _property.SetValue(_instance, EncryptString(ToSecureString(value), _scope, vector));
             }
         }
         public static void SetEntropy(string data, DataProtectionScope scope = DataProtectionScope.CurrentUser)
         {
             lock (vectorlock)
             {
+                _scope = scope;
                 vector = Encoding.Unicode.GetBytes(data);
             }
         }

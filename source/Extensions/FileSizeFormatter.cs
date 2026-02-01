@@ -9,12 +9,12 @@ namespace Extensions
 
         public static string ToFileSizeString(this long size, int precision = default_precision)
         {
-            return String.Format(_talk_bytes, "{0:fs" + precision.ToString() + "}", size);
+            return string.Format(_talk_bytes, "{0:fs" + precision.ToString() + "}", size);
         }
 
         public static string ToFileSizeString(this long size, FileSizeFormatSize range, bool suffix = true, int precision = default_precision)
         {
-            return String.Format(_talk_bytes, "{0:fs" + precision.ToString() + "," + range.ToString() + (suffix ? "":"!") + "}", size);
+            return string.Format(_talk_bytes, "{0:fs" + precision.ToString() + "," + range.ToString() + (suffix ? "" : "!") + "}", size);
         }
         public static FileSizeFormatSize GetFileSizeRange(this long size)
         {
@@ -49,7 +49,7 @@ namespace Extensions
         private const Decimal OneTeraByte = OneGigaByte * 1024M;
         private const Decimal OnePetaByte = OneTeraByte * 1024M;
 
-        private static Decimal[] sizes = new Decimal[6]
+        private static readonly Decimal[] sizes = new Decimal[6]
         {
             1M, OneKiloByte, OneMegaByte, OneGigaByte, OneTeraByte, OnePetaByte
         };
@@ -80,8 +80,8 @@ namespace Extensions
                     r = r.Substring(0, r.Length - 1);
                 }
                 hasRange = true;
-                range = (FileSizeFormatSize)Enum.Parse(typeof(FileSizeFormatSize),r);
-                
+                range = (FileSizeFormatSize)Enum.Parse(typeof(FileSizeFormatSize), r);
+
             }
             else
             {
@@ -125,15 +125,12 @@ namespace Extensions
                 }
             }
             if (range == FileSizeFormatSize.B || size == 0) precision = "0";
-            
-            return noSuffix ? String.Format("{0:N" + precision + "}", size) : String.Format("{0:N" + precision + "} {1}", size, suffix);
-
+            return noSuffix ? string.Format("{0:N" + precision + "}", size) : string.Format("{0:N" + precision + "} {1}", size, suffix);
         }
 
         private static string defaultFormat(string format, object arg, IFormatProvider formatProvider)
         {
-            IFormattable formattableArg = arg as IFormattable;
-            if (formattableArg != null)
+            if (arg is IFormattable formattableArg)
             {
                 return formattableArg.ToString(format, formatProvider);
             }
