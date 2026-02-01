@@ -31,9 +31,7 @@ namespace DiskStationManager.SecureShell
         public DSMSession(DSMHost host, EventHandler hostKeyChange, IProxySettings proxy = null)
         {
             bool canceled = false;
-
-            if (hostKeyChange == null) throw new ArgumentNullException(nameof(hostKeyChange));
-            _hostKeyChange = hostKeyChange;
+            _hostKeyChange = hostKeyChange ?? throw new ArgumentNullException(nameof(hostKeyChange));
             HostKeyChange += _hostKeyChange;
 
             //RmExecutionMode = ConsoleCommandMode.InteractiveSudo;
@@ -52,8 +50,7 @@ namespace DiskStationManager.SecureShell
             {
                 if (proxy != null)
                 {
-                    ProxyTypes proxypath;
-                    if (!Enum.TryParse(proxy.ProxyType, true, out proxypath))
+                    if (!Enum.TryParse(proxy.ProxyType, true, out ProxyTypes proxypath))
                     {
                         proxypath = ProxyTypes.None;
                     }
@@ -68,8 +65,7 @@ namespace DiskStationManager.SecureShell
 
                 foreach (var am in _ci.AuthenticationMethods)
                 {
-                    KeyboardInteractiveAuthenticationMethod kb = am as KeyboardInteractiveAuthenticationMethod;
-                    if (kb != null)
+                    if (am is KeyboardInteractiveAuthenticationMethod kb)
                     {
                         kb.AuthenticationPrompt += AuthenticationPromptAction;
                     }
@@ -109,7 +105,7 @@ namespace DiskStationManager.SecureShell
             }
             return address;
         }
-        private void client_HostKeyReceived(object sender, HostKeyEventArgs e)
+        private void SshClient_HostKeyReceived(object sender, HostKeyEventArgs e)
         {
             DialogResult trust = DialogResult.Yes;
             e.CanTrust = false; //we clicked yes if the fingerprint matches
@@ -201,39 +197,31 @@ namespace DiskStationManager.SecureShell
             }
             return result;
         }
+        private void WaitForHostKeyDuringAction<C>(C client, Action<C> action) where C : BaseClient
+        {
+            client.HostKeyReceived += SshClient_HostKeyReceived;
+            action(client);
+            client.HostKeyReceived -= SshClient_HostKeyReceived;
+        }
         [Obsolete("This method is only present to support DSM versions below 6.x")]
         public void ClientExecuteAsRoot(Action<SshClient> action)
         {
-            using (SshClient sc = new SshClient(_host.Host, "root", GetPassword()))
-            {
-                sc.HostKeyReceived += client_HostKeyReceived;
-                action(sc);
-                sc.HostKeyReceived -= client_HostKeyReceived;
-            }
+            using (SshClient sc = new SshClient(_host.Host, "root", GetPassword())) WaitForHostKeyDuringAction(sc, action);
         }
         public void ClientExecute(Action<SshClient> action)
         {
-            using (SshClient sc = new SshClient(_ci))
-            {
-                sc.HostKeyReceived += client_HostKeyReceived;
-                action(sc);
-                sc.HostKeyReceived -= client_HostKeyReceived;
-            }
+            using (SshClient sc = new SshClient(_ci)) WaitForHostKeyDuringAction(sc, action);
         }
         public void ClientExecute(Action<ScpClient> action)
         {
-            using (ScpClient sc = new ScpClient(_ci))
-            {
-                sc.HostKeyReceived += client_HostKeyReceived;
-                action(sc);
-                sc.HostKeyReceived -= client_HostKeyReceived;
-            }
+            using (ScpClient sc = new ScpClient(_ci)) WaitForHostKeyDuringAction(sc, action);
         }
+
         public string Version
         {
             get
-            {
-                if (_version == null)
+            {             
+                if (_version is null)
                 {
                     ClientExecute(sc => GetConsole(sc));
                 }
@@ -258,8 +246,8 @@ namespace DiskStationManager.SecureShell
 
         public IProxySettings Proxy => _proxySettings;
 
-        public Func<string> GetPassword => returnPassword;
-        private string returnPassword()
+        public Func<string> GetPassword => ReturnPassword;
+        private string ReturnPassword()
         {
             foreach (DSMAuthentication a in _host.AuthenticationMethods)
             {
@@ -269,7 +257,6 @@ namespace DiskStationManager.SecureShell
                 }
             }
             return GetInteractiveMethod();
-            return string.Empty;
         }
         private void AuthorizationBannerAction(object sender, AuthenticationBannerEventArgs e)
         {
@@ -345,7 +332,7 @@ namespace DiskStationManager.SecureShell
             {
                 DownloadFile(client, source, localfile);
             }
-            catch (Exception ex)
+            catch
             {
                 success = false;
             }
@@ -407,8 +394,7 @@ namespace DiskStationManager.SecureShell
 
                     foreach (var am in _ci.AuthenticationMethods)
                     {
-                        KeyboardInteractiveAuthenticationMethod kb = am as KeyboardInteractiveAuthenticationMethod;
-                        if (kb != null)
+                        if (am is KeyboardInteractiveAuthenticationMethod kb)
                         {
                             kb.AuthenticationPrompt -= AuthenticationPromptAction;
                         }

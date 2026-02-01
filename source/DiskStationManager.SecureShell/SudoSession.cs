@@ -15,7 +15,7 @@ namespace DiskStationManager.SecureShell
     }
     class SudoSession<F> : SudoSession where F : Form, IKeyboardInteractiveKeyPress, new()
     {
-        public SudoSession(ConnectionInfo connectionInfo) : base(connectionInfo, ()=>new F()) { }
+        public SudoSession(ConnectionInfo connectionInfo) : base(connectionInfo, () => new F()) { }
     }
     class SudoSession
     {
@@ -129,7 +129,7 @@ namespace DiskStationManager.SecureShell
         { }
 
         private static void DebugInfo(string message)
-        { System.Diagnostics.Debug.WriteLine($"{DateTime.UtcNow.ToString("u")} <Message>{message.Replace("\r", "\\r").Replace("\n", "\\n")}</Message>"); }
+        { System.Diagnostics.Debug.WriteLine($"{DateTime.UtcNow:u} <Message>{message.Replace("\r", "\\r").Replace("\n", "\\n")}</Message>"); }
         private static void ExperimentalSudo(ShellStream shellStream, string[] command, Func<string> passwordGetter, Func<Form> func)
         {
             //////sudo ls .
@@ -142,10 +142,11 @@ namespace DiskStationManager.SecureShell
 
 
             int idx = 0;
-            bool elevated = false;
-            var sudoStates = new TerminalParseSteps();
-
-            sudoStates.Add(SudoStates.passwordChallenge, new TerminalParseStep(regexPromptForPassword,
+            var sudoStates = new TerminalParseSteps
+            {
+                {
+                    SudoStates.passwordChallenge,
+                    new TerminalParseStep(regexPromptForPassword,
                 s =>
                 {
                     DebugInfo(s);
@@ -155,13 +156,13 @@ namespace DiskStationManager.SecureShell
                         if (passwordGetter != null)
                         {
                             if (string.IsNullOrWhiteSpace(passwordGetter())) MessageBox.Show("You did not supply your password");
-                            elevated = false;
+                            //elevated = false;
                             System.Threading.Thread.Sleep(100);
                             shellStream.WriteLine(passwordGetter());
                             return new TerminalParseResult(s, SudoStates.passwordChallenge);
                         }
                         if (func != null)
-                        { 
+                        {
                         }
                     }
                     if (s.Contains("sudo:"))
@@ -169,7 +170,7 @@ namespace DiskStationManager.SecureShell
                         return new TerminalParseResult(s, false, "The privilege elevation failed.");
                     }
 
-                    elevated = true;
+                    //elevated = true;
                     System.Diagnostics.Debug.WriteLine("Waiting for command to complete");
                     idx++; //prepare for the next command
                     if (idx < command.Length)
@@ -181,10 +182,13 @@ namespace DiskStationManager.SecureShell
 
                     return new TerminalParseResult(s, TerminalParse.Quit);
                 })
-            {
-                TimeOut = new TimeSpan(0, 1, 0)
-            });
-            sudoStates.Add(SudoStates.promptAppears, new TerminalParseStep(regexPrompt,
+                    {
+                        TimeOut = new TimeSpan(0, 1, 0)
+                    }
+                },
+                {
+                    SudoStates.promptAppears,
+                    new TerminalParseStep(regexPrompt,
                 s =>
                 {
                     DebugInfo(s);
@@ -196,7 +200,9 @@ namespace DiskStationManager.SecureShell
                     }
 
                     return new TerminalParseResult(s, TerminalParse.Quit);
-                }));
+                })
+                }
+            };
 
 
             var state = SudoStates.promptAppears;

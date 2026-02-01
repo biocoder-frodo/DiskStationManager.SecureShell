@@ -1,6 +1,7 @@
 ﻿using Renci.SshNet;
 using System;
 using System.Configuration;
+using System.Security;
 using System.Security.Cryptography;
 
 namespace DiskStationManager.SecureShell
@@ -57,6 +58,10 @@ namespace DiskStationManager.SecureShell
             internal get { return wrapped.Password; }
             set { wrapped.Password = value; }
         }
+        public void setPassword(SecureString password)
+        {
+            wrapped.Password = DpApiString.ToInsecureString(password);
+        }
         internal AuthenticationMethod getAuthenticationMethod(string userName,
                                                                 bool storePassPhrases,
                                                                 Func<string, string> getPassPhrase,
@@ -76,10 +81,9 @@ namespace DiskStationManager.SecureShell
                     PrivateKeyFile[] keys = new PrivateKeyFile[AuthenticationKeys.Items.Count];
                     foreach (DSMAuthenticationKeyFile k in AuthenticationKeys.Items)
                     {
-                        bool empty = false;
                         k.GetPassPhrase = getPassPhrase;
                         k.StorePassPhrases = storePassPhrases;
-                        keys[i++] = k.GetKeyFile(out empty);
+                        keys[i++] = k.GetKeyFile(out bool empty);
                         if (empty) canceled = true;
                     }
                     return new PrivateKeyAuthenticationMethod(userName, keys);

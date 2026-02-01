@@ -29,7 +29,7 @@ namespace DiskStationManager.SecureShell
         internal PassPhrase(string fileName)
         {
             InitializeComponent();
-            label1.Text = string.Format("Please enter the pass-phrase for keyfile '{0}'", fileName);
+            label1.Text = $"Please enter the pass-phrase for keyfile '{fileName}'";
             textBox1.Focus();
         }
         internal string Password { get { return textBox1.Text; } }

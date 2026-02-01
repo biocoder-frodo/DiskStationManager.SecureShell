@@ -1,0 +1,18 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34622.214
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "DiskStationManager.SecureShell", "DiskStationManager.SecureShell.shproj", "{6B164EFA-FB82-425C-A692-2C8EE1876582}"
+EndProject
+Global
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {90762399-5DDA-4A09-B698-C9160F6333EB}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		DiskStationManager.SecureShell.projitems*{6b164efa-fb82-425c-a692-2c8ee1876582}*SharedItemsImports = 13
+	EndGlobalSection
+EndGlobal
