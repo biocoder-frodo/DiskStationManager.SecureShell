@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)BConsoleCommand.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BDSMVersion.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ScriptBuffer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ConsoleCommandDSM4.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ConsoleCommandDSM6.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ConsoleFileInfo.cs" />

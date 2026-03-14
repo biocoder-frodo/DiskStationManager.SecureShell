@@ -66,13 +66,9 @@ namespace DiskStationManager.SecureShell
         }
         public abstract IDSMVersion GetVersionInfo();
         public abstract IDSMVersion GetVersionInfo(SshClient client);
-        internal string RemoveFileCommand(string path)
+        internal static string RemoveFileCommand(string path) => $"rm {path}";
+        internal static string RemoveFileCommand(string rootPath, ConsoleFileInfo file)
         {
-            return $"rm {path}";
-        }
-        internal string RemoveFileCommand(string rootPath, ConsoleFileInfo file)
-        {
-
             return rootPath.EndsWith("/") && file.Path.StartsWith("/")
                                                 ? RemoveFileCommand(rootPath + file.Path.Substring(1))
                                                 : RemoveFileCommand(rootPath + file.Path);

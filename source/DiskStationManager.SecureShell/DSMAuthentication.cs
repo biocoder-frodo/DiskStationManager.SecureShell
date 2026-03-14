@@ -1,6 +1,7 @@
 ﻿using Renci.SshNet;
 using System;
 using System.Configuration;
+using System.IO;
 using System.Security;
 using System.Security.Cryptography;
 
@@ -31,32 +32,20 @@ namespace DiskStationManager.SecureShell
         [ConfigurationProperty("method", IsRequired = true, IsKey = false)]
         public DSMAuthenticationMethod Method
         {
-            get
-            {
-                return (DSMAuthenticationMethod)(this["method"]);
-            }
-            set
-            {
-                this["method"] = value;
-            }
+            get => (DSMAuthenticationMethod)(this["method"]); 
+            set => this["method"] = value;
         }
 
         [ConfigurationProperty("password", IsRequired = false)]
         internal string WrappedPassword
         {
-            get
-            {
-                return this["password"] as string;
-            }
-            set
-            {
-                this["password"] = value;
-            }
+            get => this["password"] as string; 
+            set => this["password"] = value;
         }
         public string Password
         {
-            internal get { return wrapped.Password; }
-            set { wrapped.Password = value; }
+            internal get => wrapped.Password; 
+            set => wrapped.Password = value;
         }
         public void setPassword(SecureString password)
         {
@@ -64,7 +53,7 @@ namespace DiskStationManager.SecureShell
         }
         internal AuthenticationMethod getAuthenticationMethod(string userName,
                                                                 bool storePassPhrases,
-                                                                Func<string, string> getPassPhrase,
+                                                                Func<FileInfo, string> getPassPhrase,
                                                                 Func<DSMKeyboardInteractiveEventArgs, string> getInteractiveMethod,
                                                                 out bool canceled)
         {
@@ -92,21 +81,9 @@ namespace DiskStationManager.SecureShell
             }
         }
         [ConfigurationProperty("AuthenticationKeys")]
-        public NamedBasicConfigurationElementMap<DSMAuthenticationKeyFile> AuthenticationKeys
-        {
-            get
-            {
-                return this["AuthenticationKeys"] as NamedBasicConfigurationElementMap<DSMAuthenticationKeyFile>;
-            }
-        }
-        object IElementProvider.GetElementKey()
-        {
-            return Method;
-        }
+        public NamedBasicConfigurationElementMap<DSMAuthenticationKeyFile> AuthenticationKeys => this["AuthenticationKeys"] as NamedBasicConfigurationElementMap<DSMAuthenticationKeyFile>;
+        object IElementProvider.GetElementKey() => Method;
 
-        string IElementProvider.GetElementName()
-        {
-            return "AuthenticationMethod";
-        }
+        string IElementProvider.GetElementName() => "AuthenticationMethod";
     }
 }

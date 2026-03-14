@@ -21,8 +21,8 @@ namespace DiskStationManager.SecureShell
         string Version { get; }
 
         void UploadFile(string destinationPath, Action<StreamWriter> action);
-        void UploadFile(ScpClient scpClient, string destinationPath, Action<StreamWriter> action);
-        void UploadFile(ScpClient scpClient, Stream stream, string destinationPath);
-        void DownloadFile(ScpClient client, string source, FileInfo localfile);
+        //void UploadFile(ScpClient scpClient, string destinationPath, Action<StreamWriter> action);
+        //void UploadFile(ScpClient scpClient, Stream stream, string destinationPath);
+        //void DownloadFile(ScpClient client, string source, FileInfo localfile);
     }
 }

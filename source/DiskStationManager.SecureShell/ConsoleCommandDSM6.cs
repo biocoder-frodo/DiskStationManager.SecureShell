@@ -75,29 +75,21 @@ namespace DiskStationManager.SecureShell
             {
                 string script = $"{this.HomePath}./{scriptName}.sh";
 
-                dsm.UploadFile(script, sw =>
+                using (var s = ScriptBuffer.Create())
                 {
-                    var folders = new Dictionary<string, ConsoleFileInfo>();
-                    sw.Write("#!/bin/bash\n");
                     foreach (var file in files)
                     {
-                        if (folders.ContainsKey(file.Folder) == false)
-                        {
-                            folders.Add(file.Folder, file);
-                        }
-                        sw.Write(RemoveFileCommand(rootPath, file));
-                        sw.Write("\n");
+                        s.Remove(rootPath, file);
                     }
-                });
+
+                    dsm.UploadFile(script, sw => s.WriteToScript(sw));
+                }
 
                 var runSession = new SudoSession(dsm);
-                runSession.Run(new string[]
-                    {
-                        $"chmod +x {script}",
-                        $"./{scriptName}.sh",
-                        RemoveFileCommand(script)
-                    });
-
+                runSession.Run(s => s
+                    .ChangeFileMode(script, "+x")
+                    .Add($"./{scriptName}.sh")
+                    .Remove(script));            
             }
         }
     }

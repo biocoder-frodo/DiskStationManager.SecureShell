@@ -163,10 +163,10 @@ namespace DiskStationManager.SecureShell
             else
                 return MessageBox.Show(text, caption, MessageBoxButtons.YesNo, MessageBoxIcon.Exclamation);
         }
-        private string GetPassPhrase(string fileName)
+        private string GetPassPhrase(FileInfo keyFile)
         {
             string result;
-            using (PassPhrase dialog = new PassPhrase(fileName))
+            using (PassPhrase dialog = new PassPhrase(keyFile))
             {
                 dialog.ShowDialog();
                 result = dialog.Password;
@@ -275,7 +275,7 @@ namespace DiskStationManager.SecureShell
         {
             UploadFile(destinationPath, new FileInfo(sourcePath));
         }
-        public void UploadFile(ScpClient scpClient, string destinationPath, string sourcePath)
+        public static void UploadFile(ScpClient scpClient, string destinationPath, string sourcePath)
         {
             UploadFile(scpClient, destinationPath, new FileInfo(sourcePath));
         }
@@ -283,7 +283,7 @@ namespace DiskStationManager.SecureShell
         {
             ClientExecute((cp) => UploadFile(cp, new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read), destinationPath));
         }
-        public void UploadFile(ScpClient scpClient, string destinationPath, FileInfo fileInfo)
+        public static void UploadFile(ScpClient scpClient, string destinationPath, FileInfo fileInfo)
         {
             UploadFile(scpClient, new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read), destinationPath);
         }
@@ -316,7 +316,7 @@ namespace DiskStationManager.SecureShell
                 }
             }
         }
-        public void UploadFile(ScpClient scpClient, Stream stream, string destinationPath)
+        public static void UploadFile(ScpClient scpClient, Stream stream, string destinationPath)
         {
             System.Diagnostics.Debug.WriteLine($"Upload to {destinationPath}");
             bool reOpen = scpClient.IsConnected == false;
@@ -356,6 +356,11 @@ namespace DiskStationManager.SecureShell
         public void DownloadFile(string source, FileInfo localfile)
         {
             ClientExecute(scp => DownloadFile(scp, source, localfile));
+        }
+        public MemoryStream DownloadFile(string source)
+        {
+            DownloadFile(source, out MemoryStream stream);
+            return stream;
         }
         public void DownloadFile(string source, out MemoryStream stream)
         {

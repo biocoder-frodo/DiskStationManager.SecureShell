@@ -2,6 +2,7 @@
 using Renci.SshNet.Common;
 using System;
 using System.Configuration;
+using System.IO;
 using System.Security.Cryptography;
 
 namespace DiskStationManager.SecureShell
@@ -19,14 +20,8 @@ namespace DiskStationManager.SecureShell
         [ConfigurationProperty("filename", IsRequired = true, IsKey = true)]
         public string FileName
         {
-            get
-            {
-                return this["filename"] as string;
-            }
-            set
-            {
-                this["filename"] = value;
-            }
+            get => this["filename"] as string;
+            set => this["filename"] = value;
         }
 
         [ConfigurationProperty("passPhrase", IsRequired = false)]
@@ -47,7 +42,7 @@ namespace DiskStationManager.SecureShell
             set { wrapped.Password = value; }
         }
         public bool StorePassPhrases { get; set; }
-        public Func<string, string> GetPassPhrase { get; set; }
+        public Func<FileInfo, string> GetPassPhrase { get; set; }
         internal PrivateKeyFile GetKeyFile(out bool canceled)
         {
             canceled = false;
@@ -62,7 +57,7 @@ namespace DiskStationManager.SecureShell
                     return new PrivateKeyFile(FileName, PassPhrase);
                 }
 
-                string pass = GetPassPhrase(FileName);
+                string pass = GetPassPhrase(new FileInfo(FileName));
                 canceled = string.IsNullOrEmpty(pass);
                 if (canceled == false)
                 {

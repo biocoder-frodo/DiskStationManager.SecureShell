@@ -28,7 +28,7 @@ namespace DiskStationManager.SecureShell
             NextStep = parseStep;
         }
     }
-    public static class Extensions
+    public static partial class Extensions
     {
         public static TerminalParseResult Execute(this ShellStream shellStream, TerminalParseStep step)
         {

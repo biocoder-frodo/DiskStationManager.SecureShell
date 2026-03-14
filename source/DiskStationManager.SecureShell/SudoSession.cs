@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace DiskStationManager.SecureShell
 {
@@ -61,6 +62,14 @@ namespace DiskStationManager.SecureShell
                 RunCommands(scr, commands, _mode, _password);
                 scr.Disconnect();
             }
+        }
+        public void Run(Func<ScriptBuffer, ScriptBuffer> script)
+        {
+            Run(script(ScriptBuffer.Create()).GetContents());
+        }
+        public void Run(ScriptBuffer script)
+        {
+            Run(script.GetContents());
         }
 
         internal static string RunCommand(SshClient session, string command, ConsoleCommandMode mode, Func<string> passwordGetter = null, Func<Form> func =null)
@@ -128,8 +137,7 @@ namespace DiskStationManager.SecureShell
         internal class TerminalParseSteps : TerminalParseSteps<SudoStates>
         { }
 
-        private static void DebugInfo(string message)
-        { System.Diagnostics.Debug.WriteLine($"{DateTime.UtcNow:u} <Message>{message.Replace("\r", "\\r").Replace("\n", "\\n")}</Message>"); }
+        private static void DebugInfo(string message) => Debug.WriteLine($"{DateTime.UtcNow:u} <Message>{message.Replace("\r", "\\r").Replace("\n", "\\n")}</Message>");
         private static void ExperimentalSudo(ShellStream shellStream, string[] command, Func<string> passwordGetter, Func<Form> func)
         {
             //////sudo ls .
