@@ -24,7 +24,7 @@ namespace DiskStationManager.SecureShell
         private static readonly Regex regexPromptForPassword = new Regex(@"([$#>]|(Password:)|(sudo:))", RegexOptions.Compiled | RegexOptions.Singleline);
         private static string sudo(string command)
         {
-            return command.StartsWith("cd ")? command: $"sudo {command}";
+            return command.StartsWith("cd ") ? command : $"sudo {command}";
         }
         private readonly ConsoleCommandMode _mode;
         private readonly ConnectionInfo _connectionInfo;
@@ -32,7 +32,7 @@ namespace DiskStationManager.SecureShell
         private readonly Func<Form> _interactivePassword;
 
         public SudoSession(ISecureShellSession secureShell)
-            :this(secureShell.ConnectionInfo,secureShell.GetPassword)
+            : this(secureShell.ConnectionInfo, secureShell.GetPassword)
         { }
         public SudoSession(ConnectionInfo connectionInfo, Func<string> passwordGetter)
             : this(connectionInfo, ConsoleCommandMode.InteractiveSudo)
@@ -72,7 +72,7 @@ namespace DiskStationManager.SecureShell
             Run(script.GetContents());
         }
 
-        internal static string RunCommand(SshClient session, string command, ConsoleCommandMode mode, Func<string> passwordGetter = null, Func<Form> func =null)
+        internal static string RunCommand(SshClient session, string command, ConsoleCommandMode mode, Func<string> passwordGetter = null, Func<Form> func = null)
         {
 
             switch (mode)
@@ -80,7 +80,7 @@ namespace DiskStationManager.SecureShell
                 case ConsoleCommandMode.Sudo:
                     return session.RunCommand(sudo(command)).Result;
                 case ConsoleCommandMode.InteractiveSudo:
-                    ExperimentalSudo(session, command, passwordGetter,func);
+                    ExperimentalSudo(session, command, passwordGetter, func);
                     return string.Empty;
                 default:
                     return session.RunCommand(command).Result;
@@ -90,7 +90,7 @@ namespace DiskStationManager.SecureShell
         {
             if (mode == ConsoleCommandMode.InteractiveSudo)
             {
-                ExperimentalSudo(session, commands, passwordGetter,func);
+                ExperimentalSudo(session, commands, passwordGetter, func);
                 return string.Empty;
             }
             else
@@ -117,7 +117,7 @@ namespace DiskStationManager.SecureShell
 
                 using (ShellStream shellStream = session.CreateShellStream("xterm", 255, 24, 800, 600, 1024, termkvp))
                 {
-                    ExperimentalSudo(shellStream, command, passwordGetter,func);
+                    ExperimentalSudo(shellStream, command, passwordGetter, func);
                 }
             }
             catch (Exception ex)

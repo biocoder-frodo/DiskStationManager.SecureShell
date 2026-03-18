@@ -301,7 +301,7 @@ namespace DiskStationManager.SecureShell
                 }
             }
         }
-        public void UploadFile(ScpClient scpClient, string destinationPath, Action<StreamWriter> action)
+        public static void UploadFile(ScpClient scpClient, string destinationPath, Action<StreamWriter> action)
         {
             using (var ms = new MemoryStream())
             {
@@ -325,19 +325,8 @@ namespace DiskStationManager.SecureShell
             scpClient.Upload(stream, destinationPath);
             if (reOpen) scpClient.Disconnect();
         }
-        public void DownloadFile(ScpClient client, string source, FileInfo localfile, out bool success)
-        {
-            success = true;
-            try
-            {
-                DownloadFile(client, source, localfile);
-            }
-            catch
-            {
-                success = false;
-            }
-        }
-        public void DownloadFile(ScpClient client, string source, FileInfo localfile)
+
+        public static void DownloadFile(ScpClient client, string source, FileInfo localfile)
         {
             System.Diagnostics.Debug.WriteLine($"Download from {source}");
             if (localfile.Exists == false)
@@ -362,6 +351,12 @@ namespace DiskStationManager.SecureShell
             DownloadFile(source, out MemoryStream stream);
             return stream;
         }
+
+        /// <summary>
+        /// Download a file with scp.RemotePathTransformation = RemotePathTransformation.None;
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="stream"></param>
         public void DownloadFile(string source, out MemoryStream stream)
         {
             MemoryStream ms = null;
