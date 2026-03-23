@@ -24,7 +24,7 @@ namespace DiskStationManager.SecureShell
         public static bool ConsoleUI { get; set; }
 
         private AuthenticationBannerEventArgs _banner;
-        public void OnHostKeyChange(object sender, EventArgs e)
+        private void OnHostKeyChange(object sender, EventArgs e)
         {
             HostKeyChange?.Invoke(sender, e);
         }
@@ -220,7 +220,7 @@ namespace DiskStationManager.SecureShell
         public string Version
         {
             get
-            {             
+            {
                 if (_version is null)
                 {
                     ClientExecute(sc => GetConsole(sc));
@@ -230,12 +230,12 @@ namespace DiskStationManager.SecureShell
         }
         internal IConsoleCommand GetConsole(SshClient client)
         {
-            IConsoleCommand console;
-            bool briefly = client.IsConnected == false;
-
-            if (briefly) client.Connect();
-            console = BConsoleCommand.GetDSMConsole(client);
-            if (briefly) client.Disconnect();
+            IConsoleCommand console = null;
+            EnsureConnection(client, ssh =>
+            {
+                console = BConsoleCommand.GetDSMConsole(ssh);
+                _version = console.GetVersionInfo();
+            });
             _version = console.GetVersionInfo();
             return console;
         }
@@ -285,7 +285,10 @@ namespace DiskStationManager.SecureShell
         }
         public static void UploadFile(ScpClient scpClient, string destinationPath, FileInfo fileInfo)
         {
-            UploadFile(scpClient, new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read), destinationPath);
+            using (var fs = new FileStream(fileInfo.FullName, FileMode.Open, FileAccess.Read))
+            {
+                UploadFile(scpClient,fs, destinationPath); 
+            }
         }
         public void UploadFile(string destinationPath, Action<StreamWriter> action)
         {
@@ -316,30 +319,63 @@ namespace DiskStationManager.SecureShell
                 }
             }
         }
-        public static void UploadFile(ScpClient scpClient, Stream stream, string destinationPath)
+        public static void UploadFile(ScpClient client, Stream stream, string destinationPath)
         {
             System.Diagnostics.Debug.WriteLine($"Upload to {destinationPath}");
-            bool reOpen = scpClient.IsConnected == false;
-            scpClient.RemotePathTransformation = RemotePathTransformation.None;
-            if (reOpen) scpClient.Connect();
-            scpClient.Upload(stream, destinationPath);
-            if (reOpen) scpClient.Disconnect();
-        }
 
+            EnsureConnection(client, scp => scp.Upload(stream, destinationPath));
+        }
+        protected static void EnsureConnection<C>(C client, Action<C> action, IRemotePathTransformation transformation = null) where C : BaseClient
+        {
+            bool briefly = client.IsConnected == false;
+
+            if (briefly) client.Connect();
+
+            if (client is ScpClient scp)
+            {
+                scp.RemotePathTransformation = transformation ?? RemotePathTransformation.None;
+            }
+            else
+            {
+                if ((transformation is null) == false)
+                {
+                    throw new ArgumentException($"{typeof(C).Name} does not support remote path transformation.", nameof(transformation), new NotSupportedException(typeof(C).Name));
+                }
+            }
+
+            action(client);
+
+            if (briefly) client.Disconnect();
+        }
+        /// <summary>
+        ///  used in SynoReportViaSSH
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="source"></param>
+        /// <param name="localfile"></param>
+        /// <param name="success"></param>
+        public static void DownloadFile(ScpClient client, string source, FileInfo localfile, out bool success)
+        {
+            success = true;
+            try
+            {
+                DownloadFile(client, source, localfile);
+            }
+            catch
+            {
+                success = false;
+            }
+        }
         public static void DownloadFile(ScpClient client, string source, FileInfo localfile)
         {
             System.Diagnostics.Debug.WriteLine($"Download from {source}");
             if (localfile.Exists == false)
             {
-                bool reOpen = client.IsConnected == false;
-                client.RemotePathTransformation = RemotePathTransformation.None;
-                if (reOpen) client.Connect();
-                client.Download(source, localfile);
-                if (reOpen) client.Disconnect();
+                EnsureConnection(client, scp => scp.Download(source, localfile));
             }
             else
             {
-                throw new FileNotFoundException("File already exists", localfile.FullName);
+                throw new IOException("File already exists.", new ArgumentException(localfile.FullName));
             }
         }
         public void DownloadFile(string source, FileInfo localfile)
@@ -353,20 +389,14 @@ namespace DiskStationManager.SecureShell
         }
 
         /// <summary>
-        /// Download a file with scp.RemotePathTransformation = RemotePathTransformation.None;
+        /// Download a file;
         /// </summary>
         /// <param name="source"></param>
         /// <param name="stream"></param>
-        public void DownloadFile(string source, out MemoryStream stream)
+        public void DownloadFile(string source, out MemoryStream stream, IRemotePathTransformation transformation = null)
         {
             MemoryStream ms = null;
-            ClientExecute(scp =>
-            {
-                scp.RemotePathTransformation = RemotePathTransformation.None;
-                scp.Connect();
-                ms = DownloadStream(scp, source);
-                scp.Disconnect();
-            });
+            ClientExecute(scp => EnsureConnection(scp, cp => ms = DownloadStream(cp, source), transformation));
             stream = ms;
         }
         private MemoryStream DownloadStream(ScpClient client, string source)
@@ -377,10 +407,10 @@ namespace DiskStationManager.SecureShell
             result.Seek(0, SeekOrigin.Begin);
             return result;
         }
-        public void DownloadFile(ScpClient client, string source, out MemoryStream stream)
-        {
-            stream = DownloadStream(client, source);
-        }
+        //public void DownloadFile(ScpClient client, string source, out MemoryStream stream)
+        //{
+        //    stream = DownloadStream(client, source);
+        //}
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

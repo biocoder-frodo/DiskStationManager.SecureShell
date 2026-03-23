@@ -18,7 +18,7 @@ namespace DiskStationManager.SecureShell
     {
         public SudoSession(ConnectionInfo connectionInfo) : base(connectionInfo, () => new F()) { }
     }
-    class SudoSession
+    class SudoSession : IDisposable
     {
         private static readonly Regex regexPrompt = new Regex(@"[$#>]", RegexOptions.Compiled | RegexOptions.Singleline);
         private static readonly Regex regexPromptForPassword = new Regex(@"([$#>]|(Password:)|(sudo:))", RegexOptions.Compiled | RegexOptions.Singleline);
@@ -30,6 +30,9 @@ namespace DiskStationManager.SecureShell
         private readonly ConnectionInfo _connectionInfo;
         private readonly Func<string> _password;
         private readonly Func<Form> _interactivePassword;
+
+        private bool disposedValue;
+        private SshClient sshClient;
 
         public SudoSession(ISecureShellSession secureShell)
             : this(secureShell.ConnectionInfo, secureShell.GetPassword)
@@ -56,12 +59,11 @@ namespace DiskStationManager.SecureShell
         }
         public void Run(string[] commands)
         {
-            using (SshClient scr = new SshClient(_connectionInfo))
-            {
-                scr.Connect();
-                RunCommands(scr, commands, _mode, _password);
-                scr.Disconnect();
-            }
+            if (sshClient is null) sshClient = new SshClient(_connectionInfo);
+            sshClient.Connect();
+            RunCommands(sshClient, commands, _mode, _password);
+            sshClient.Disconnect();
+
         }
         public void Run(Func<ScriptBuffer, ScriptBuffer> script)
         {
@@ -229,6 +231,25 @@ namespace DiskStationManager.SecureShell
             }
         }
 
-    }
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    sshClient?.Dispose();
+                }
 
+                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+                // TODO: set large fields to null
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+    }
 }
